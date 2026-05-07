@@ -1,4 +1,8 @@
 echo ".venv/
 __pycache__/
 *.pyc
-.env" > .gitignore
+*.pyo
+.env
+*.egg-info/
+dist/
+build/" > .gitignore
