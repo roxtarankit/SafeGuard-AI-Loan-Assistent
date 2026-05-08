@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 import pandas as pd
 import joblib
+import os
 from newkiva import KivaPrediction
 import warnings
 
@@ -11,8 +12,8 @@ app = Flask(__name__)
 # ---------------- LOAD MODELS ----------------
 model = joblib.load('RF_Reg.pkl')
 
-model1 = joblib.load('svm_model.pkl')
-scaler = joblib.load('svm_scaler.pkl')
+model1 = joblib.load('SVM_model.pkl')
+scaler = joblib.load('SVM_scaler.pkl')
 feature_columns = joblib.load('svm_feature_columns.pkl')
 
 obj = KivaPrediction()
@@ -43,7 +44,6 @@ def predict():
         cp = int(request.form['cp'])
         ac = int(request.form['ac'])
 
-        # Prepare input dataframe
         input_data = pd.DataFrame([{
             'FIRST_CAREUNIT': careunit_mapping[first_careunit],
             'LAST_CAREUNIT': careunit_mapping[last_careunit],
@@ -53,7 +53,6 @@ def predict():
             'GENDER': 1 if gender == 'M' else 0
         }])
 
-        # Prediction
         prediction = round(model.predict(input_data)[0] * 24, 2)
         total_cost = (prediction * cp) + ac
         loan = "Do you want to apply for loan?"
@@ -69,7 +68,6 @@ def predict():
 @app.route('/kiva/<pred>/<total_cost>', methods=['GET', 'POST'])
 def kiva(pred, total_cost):
 
-    # Convert URL params to numbers
     pred = float(pred)
     total_cost = float(total_cost)
 
@@ -89,7 +87,6 @@ def kiva(pred, total_cost):
             'female_count': int(request.form['female_count']),
         }
 
-        # Predict loan approval
         prediction = obj.predictKivaLoan(
             model1,
             scaler,
@@ -120,4 +117,5 @@ def kiva(pred, total_cost):
 
 # ---------------- APP ENTRY ----------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
